@@ -1,8 +1,9 @@
 import socket
+from http_parser import *
 
-HOST = "127.0.0.1"  # escucha en todas las interfaces
-PORT = 8080         # puerto HTTP estándar (necesita sudo)
-
+HOST = "10.42.0.1"  
+PORT = 8080         
+_parser=HTTPParser()
 html = """
 <!DOCTYPE html>
 <html>
@@ -31,16 +32,17 @@ while True:
     request = client.recv(2048).decode(errors="ignore")
     print("Peticiones:", request.split("\n")[0])  # solo la primera línea
 
-    response = (
-        "HTTP/1.1 200 OK\r\n"
-        "Content-Type: text/html\r\n"
-        "Connection: close\r\n"
-        "Cache-Control: no-cache, no-store, must-revalidate\r\n"
-        "Pragma: no-cache\r\n"
-        "Expires: 0\r\n"
-        "\r\n" +
-        html
-    )
+    response=_parser.build_html_response(html_content=html)
+    # response = (
+    #     "HTTP/1.1 200 OK\r\n"
+    #     "Content-Type: text/html\r\n"
+    #     "Connection: close\r\n"
+    #     "Cache-Control: no-cache, no-store, must-revalidate\r\n"
+    #     "Pragma: no-cache\r\n"
+    #     "Expires: 0\r\n"
+    #     "\r\n" +
+    #     html
+    # )
 
-    client.sendall(response.encode())
+    client.sendall(response.to_bytes())
     client.close()

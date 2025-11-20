@@ -1,6 +1,6 @@
 
-WAN_IF="wlp4s0"
-LAN_IF="enp0s31f6"
+WAN_IF="enp0s31f6"
+LAN_IF="wlp4s0"
 HTTP_REDIRECT_PORT="8080"
 
 BACKUP_DIR="/tmp/captive-router"
@@ -29,7 +29,7 @@ start_router() {
    
 
    
-    echo "Portal cautivo activo en https://127.0.0.1:${HTTPS_PORT}/login"
+    echo "Portal cautivo activo en https://10.42.0.1:${HTTPS_PORT}/login"
 }
 
 stop_router() {
