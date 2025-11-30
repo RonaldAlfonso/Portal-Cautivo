@@ -3,65 +3,17 @@ import threading
 from src.auth.authentication import Authentication
 from src.server.ConexionManager import Conexion_Manager
 from src.server.http_parser import HTTPParser
-
+from src.server.Html import Html
+from queue import Queue
 HOST = "10.42.0.1"
 PORT = 8080
+WORKER_COUNT = 10
+client_queue = Queue()
 
 _parser = HTTPParser()
 count_manager = Authentication()
 
-html_login = """
-<!DOCTYPE html>
-<html>
-<head>
-<meta charset="UTF-8">
-<title>Portal Cautivo</title>
-</head>
-<body>
-<h1>Acceso requerido</h1>
-<form id="loginForm">
-  <label>Usuario:</label><br>
-  <input type="text" id="user" name="user"><br><br>
 
-  <label>Contraseña:</label><br>
-  <input type="password" id="pass" name="pass"><br><br>
-
-  <button type="submit">Entrar</button>
-</form>
-
-<script>
-document.getElementById('loginForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-
-    const user = document.getElementById('user').value;
-    const pass = document.getElementById('pass').value;
-
-    const response = await fetch('/', {
-        method: 'POST',
-        headers: {
-            'user': user,
-            'pass': pass
-        }
-    });
-
-    const text = await response.text();
-    document.body.innerHTML = text;
-});
-</script>
-</body>
-</html>
-"""
-
-html_ok = """
-<!DOCTYPE html>
-<html>
-<head><meta charset="UTF-8"><title>OK</title></head>
-<body>
-<h1>Acceso concedido</h1>
-<p>Ya puedes navegar.</p>
-</body>
-</html>
-"""
 
 def handle_client(client: socket.socket, addr):
     try:
@@ -71,31 +23,35 @@ def handle_client(client: socket.socket, addr):
             return
 
         request = _parser.parse_request(raw_data)
+        request._parse_form_data()
 
         # --- GET → devolver formulario ---
         if request.method == "GET":
-            response = _parser.build_html_response(html_login)
+            response = _parser.build_html_response(Html.html_login)
             client.sendall(response.to_bytes())
             client.close()
             return
 
         # --- POST → validar usuario ---
         if request.method == "POST":
-            user = request.headers.get("user", "")
-            password = request.headers.get("pass", "")
+            form=request._parse_form_data()
+            user=form['user']
+            password=form['pass']
+            
             print(user)
             print(password)
+            
 
-            valido, error, sesion_id = count_manager.login(password, user, addr[0])
-            if(user=="admin" and password=="1234"):
-                valido=True
+            valido, error, sesion_id = count_manager.login(user, password, addr[0])
+            # if(user=="admin" and password=="1234"):
+            #     valido=True
             print(valido)
             if not valido:
                 response = _parser.build_error_response(400, error)
                 client.sendall(response.to_bytes())
             else:
                 Conexion_Manager.permitir_usuario(addr[0])
-                response = _parser.build_html_response(html_ok)
+                response = _parser.build_html_response(Html.html_ok)
                 client.sendall(response.to_bytes())
 
     except Exception as e:
@@ -104,14 +60,37 @@ def handle_client(client: socket.socket, addr):
         client.close()
 
 
+def worker():
+    """Worker que atiende clientes de la cola."""
+    while True:
+        client, addr = client_queue.get()   # Espera un cliente
+        try:
+            handle_client(client, addr)
+        except Exception as e:
+            print(f"Error manejando {addr}: {e}")
+        finally:
+          
+            client_queue.task_done()  
+
+
+def start_thread_pool():
+    
+    for _ in range(WORKER_COUNT):
+        t = threading.Thread(target=worker, daemon=True)
+        t.start()
+        
 # --- Servidor principal con threads ---
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 server.bind((HOST, PORT))
 server.listen(50)
-count_manager.create_user("admin","1234")
+start_thread_pool()
+count_manager.create_user("admin","12345678")
 print(f"Servidor captivo escuchando en {HOST}:{PORT}")
 
 while True:
     client, addr = server.accept()
-    threading.Thread(target=handle_client, args=(client, addr), daemon=True).start()
+    client_queue.put((client, addr))
+    
+
+
