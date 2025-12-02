@@ -4,14 +4,17 @@ from src.auth.authentication import Authentication
 from src.server.ConexionManager import Conexion_Manager
 from src.server.http_parser import HTTPParser
 from src.server.Html import Html
+from src.server.session_verification import start_cleanup_thread
+from ssl.ssl_manager import SSLManager 
 from queue import Queue
-HOST = "10.42.0.1"
+HOST = "127.0.0.1" #"10.42.0.1"
 PORT = 8080
 WORKER_COUNT = 10
 client_queue = Queue()
 
 _parser = HTTPParser()
 count_manager = Authentication()
+ssl_manager=SSLManager()
 
 
 
@@ -50,7 +53,8 @@ def handle_client(client: socket.socket, addr):
                 response = _parser.build_error_response(400, error)
                 client.sendall(response.to_bytes())
             else:
-                Conexion_Manager.permitir_usuario(addr[0])
+                mac=Conexion_Manager.get_mac(addr[0])
+                Conexion_Manager.permitir_usuario(addr[0],mac)
                 response = _parser.build_html_response(Html.html_ok)
                 client.sendall(response.to_bytes())
 
@@ -83,8 +87,10 @@ def start_thread_pool():
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 server.bind((HOST, PORT))
+server=ssl_manager.wrap_server_socket(server)
 server.listen(50)
 start_thread_pool()
+start_cleanup_thread(count_manager)
 count_manager.create_user("admin","12345678")
 print(f"Servidor captivo escuchando en {HOST}:{PORT}")
 

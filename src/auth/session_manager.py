@@ -7,6 +7,7 @@ import stat
 import fcntl
 from typing import Dict, Optional, List
 from datetime import datetime
+from src.server.ConexionManager import *
 
 class SessionManager:
     def __init__(self, sessions_file: str = "data/sessions.json", session_timeout: int = 3600):
@@ -179,17 +180,20 @@ class SessionManager:
     def _cleanup_expired_sessions(self, save_after_cleanup: bool = True):
         current_time = time.time()
         expired_sessions = [
-            session_id for session_id, session_data in self.sessions.items()
-            if current_time > session_data.get('expires_at', 0)
-        ]
+        (session_id, session_data)
+        for session_id, session_data in self.sessions.items()
+        if current_time > session_data.get('expires_at', 0)
+]
         
-        for session_id in expired_sessions:
+        for (session_id,session_data) in expired_sessions:
+            ##################################################################################
+            Conexion_Manager.bloquear_usuario(session_data.get('client_ip'),session_data.get('client_mac'))
             del self.sessions[session_id]
         
         if expired_sessions and save_after_cleanup:
             self._save_sessions()
     
-    def create_session(self, username: str, client_ip: str) -> str:
+    def create_session(self, username: str, client_ip: str,mac) -> str:
         session_id = self._generate_session_id()
         current_time = time.time()
         
@@ -198,7 +202,8 @@ class SessionManager:
             'client_ip': client_ip,
             'created_at': current_time,
             'last_activity': current_time,
-            'expires_at': current_time + self.session_timeout
+            'expires_at': current_time + self.session_timeout,
+            'client_mac':mac
         }
         
         self._save_sessions()

@@ -24,7 +24,7 @@ class Authentication:
             return "unknown"
         return hashlib.sha256(username.encode()).hexdigest()[:16]
     
-    def login(self, username: str, password: str, client_ip: str) -> Tuple[bool, str, Optional[str]]:
+    def login(self, username: str, password: str, client_ip: str,mac) -> Tuple[bool, str, Optional[str]]:
         sanitized_user = self._sanitize_username_for_logs(username)
         
         try:
@@ -38,7 +38,7 @@ class Authentication:
             if not self.user_manager.authenticate_user(username, password):
                 return False, "Credenciales inválidas", None
             
-            session_id = self.session_manager.create_session(username, client_ip)
+            session_id = self.session_manager.create_session(username, client_ip,mac)
             if not session_id:
                 return False, "Error interno del sistema", None
                 

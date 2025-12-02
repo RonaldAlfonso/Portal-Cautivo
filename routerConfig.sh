@@ -1,7 +1,7 @@
 
 WAN_IF="enp0s31f6"
 LAN_IF="wlp4s0"
-HTTP_REDIRECT_PORT="8080"
+HTTP_REDIRECT_PORT="8443"
 
 BACKUP_DIR="/tmp/captive-router"
 IPTABLES_BACKUP="$BACKUP_DIR/iptables.backup"
@@ -25,7 +25,7 @@ start_router() {
     iptables -t nat -A POSTROUTING -o "$WAN_IF" -j MASQUERADE #nateo
     iptables -A FORWARD -i "$WAN_IF" -o "$LAN_IF" -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT 
     iptables -A FORWARD -i "$LAN_IF" -o "$WAN_IF" -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT # esta y la de arriba permite que pasen las cosas de una conexion permitida
-    iptables -t nat -A PREROUTING -i "$LAN_IF" -p tcp --dport 80 -j REDIRECT --to-port "$HTTP_REDIRECT_PORT"
+    iptables -t nat -A PREROUTING -i "$LAN_IF" -p tcp --dport 443 -j REDIRECT --to-port "$HTTP_REDIRECT_PORT"
    
 
    
