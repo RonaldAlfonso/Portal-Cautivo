@@ -10,7 +10,7 @@ class Authentication:
     def __init__(self, 
                  users_file: str = "data/users.json",
                  sessions_file: str = "data/sessions.json",
-                 session_timeout: int = 3600):
+                 session_timeout: int = 40):
         
         try:
             self.user_manager = UserManager(users_file)

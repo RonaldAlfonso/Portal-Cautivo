@@ -8,9 +8,10 @@ from src.server.Html import Html
 from src.server.session_verification import start_cleanup_thread
 from secure.ssl_manager import SSLManager 
 from queue import Queue
+import time
 
-HOST = "0.0.0.0" #"10.42.0.1"
-PORT = 8443
+HOST = "10.42.0.1"
+PORT = 8080
 WORKER_COUNT = 10
 client_queue = Queue()
 
@@ -97,11 +98,12 @@ def start_thread_pool():
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 server.bind((HOST, PORT))
-server=ssl_manager.wrap_server_socket(server)
+# server=ssl_manager.wrap_server_socket(server)
 server.listen(50)
 start_thread_pool()
 start_cleanup_thread(count_manager)
 count_manager.create_user("admin","12345678")
+print(time.time())
 print(f"Servidor captivo escuchando en {HOST}:{PORT}")
 
 while True:
