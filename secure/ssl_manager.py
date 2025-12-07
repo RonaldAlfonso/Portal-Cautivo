@@ -3,14 +3,15 @@ import socket
 import logging
 import os
 import subprocess
+import tempfile
 from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
 class SSLManager:
     def __init__(self, 
-                 certfile: str = "ssl/server.crt", 
-                 keyfile: str = "ssl/server.key",
+                 certfile: str = "secure/server.crt", 
+                 keyfile: str = "secure/server.key",
                  enable_https: bool = True):
         
         self.certfile = self._validate_file_path(certfile)
@@ -57,15 +58,45 @@ class SSLManager:
     
     def _generate_self_signed_cert(self) -> None:
         try:
+            server_ip = "10.42.0.1"
+            
             result_key = subprocess.run([
                 'openssl', 'genrsa', '-out', self.keyfile, '2048'
             ], check=True, capture_output=True, text=True)
             
+            csr_config = f"""[req]
+default_bits = 2048
+prompt = no
+default_md = sha256
+distinguished_name = dn
+req_extensions = req_ext
+
+[dn]
+CN = {server_ip}
+O = Portal Cautivo
+C = CU
+
+[req_ext]
+subjectAltName = @alt_names
+
+[alt_names]
+DNS.1 = localhost
+DNS.2 = captive-portal.local
+IP.1 = 127.0.0.1
+IP.2 = {server_ip}
+"""
+            
+            with tempfile.NamedTemporaryFile(mode='w', suffix='.cnf', delete=False) as f:
+                f.write(csr_config)
+                config_file = f.name
+            
             result_cert = subprocess.run([
                 'openssl', 'req', '-new', '-x509', '-key', self.keyfile,
-                '-out', self.certfile, '-days', '365', '-subj',
-                '/CN=captive-portal.local/O=Captive Portal/C=CU'
+                '-out', self.certfile, '-days', '365',
+                '-config', config_file
             ], check=True, capture_output=True, text=True)
+            
+            os.unlink(config_file)
             
             if not os.path.exists(self.keyfile) or not os.path.exists(self.certfile):
                 raise RuntimeError("Los archivos de certificado no se crearon")
@@ -84,8 +115,9 @@ class SSLManager:
                 try:
                     if os.path.exists(file_path):
                         os.unlink(file_path)
-                except OSError as cleanup_error:
-                    logger.debug(f"Error limpiando {file_path}: {cleanup_error}")
+                except OSError:
+                    pass
+            
             self.enable_https = False
     
     def _setup_ssl_context(self) -> None:
@@ -116,22 +148,30 @@ class SSLManager:
             logger.error("HTTPS CRÍTICAMENTE DESACTIVADO - El servidor funciona SIN cifrado")
             return plain_socket
         
+        logger.info("Socket del servidor listo para conexiones SSL")
+        return plain_socket
+    
+    def wrap_client_socket(self, client_socket: socket.socket):
+        if not self.enable_https or not self.context:
+            return client_socket
+        
         try:
             secure_socket = self.context.wrap_socket(
-                plain_socket, 
+                client_socket,
                 server_side=True,
-                do_handshake_on_connect=True
+                do_handshake_on_connect=False
             )
-            logger.debug("Socket envuelto correctamente con SSL")
+            secure_socket.settimeout(5.0)
+            secure_socket.do_handshake()
+            secure_socket.settimeout(None)
             return secure_socket
-            
         except ssl.SSLError as e:
-            logger.error(f"Error envolviendo socket SSL: {e}")
+            logger.warning(f"Error en handshake SSL: {e}")
             try:
-                plain_socket.close()
-            except OSError as close_error:
-                logger.debug(f"Error cerrando socket: {close_error}")
-            raise RuntimeError(f"No se pudo establecer conexión SSL segura: {e}")
+                client_socket.close()
+            except:
+                pass
+            raise
     
     def get_https_info(self) -> dict:
         info = {

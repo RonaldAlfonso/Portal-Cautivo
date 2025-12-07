@@ -1,14 +1,16 @@
 import socket
 import threading
+import ssl
 from src.auth.authentication import Authentication
 from src.server.ConexionManager import Conexion_Manager
 from src.server.http_parser import HTTPParser
 from src.server.Html import Html
 from src.server.session_verification import start_cleanup_thread
-from ssl.ssl_manager import SSLManager 
+from secure.ssl_manager import SSLManager 
 from queue import Queue
-HOST = "127.0.0.1" #"10.42.0.1"
-PORT = 8080
+
+HOST = "0.0.0.0" #"10.42.0.1"
+PORT = 8443
 WORKER_COUNT = 10
 client_queue = Queue()
 
@@ -17,8 +19,13 @@ count_manager = Authentication()
 ssl_manager=SSLManager()
 
 
-
 def handle_client(client: socket.socket, addr):
+    if ssl_manager.enable_https:
+        try:
+            client = ssl_manager.wrap_client_socket(client)
+        except ssl.SSLError:
+            return  # Si falla SSL, cerrar conexión
+    
     try:
         raw_data = client.recv(8192)
         if not raw_data:
@@ -97,6 +104,3 @@ print(f"Servidor captivo escuchando en {HOST}:{PORT}")
 while True:
     client, addr = server.accept()
     client_queue.put((client, addr))
-    
-
-
