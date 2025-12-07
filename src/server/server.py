@@ -20,16 +20,7 @@ count_manager = Authentication()
 ssl_manager=SSLManager()
 
 
-def handle_client(client: socket.socket, addr):
-    if ssl_manager.enable_https:
-        try:
-            client = ssl_manager.wrap_client_socket(client)
-        except (ssl.SSLError, socket.timeout):
-            return
-        except Exception as e:
-            print(f"Error no esperado en SSL wrap: {e}")
-            return
-    
+def handle_client(client: socket.socket, addr): 
     try:
         raw_data = client.recv(8192)
         if not raw_data:
@@ -98,7 +89,6 @@ def start_thread_pool():
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 server.bind((HOST, PORT))
-# server=ssl_manager.wrap_server_socket(server)
 server.listen(50)
 start_thread_pool()
 start_cleanup_thread(count_manager)

@@ -4,7 +4,7 @@ import time
 def start_cleanup_thread(autentication_manager:Authentication):
     def cleanup_loop():
         while True:
-            print("entre al hilo")
+         
             try:
                 
                 autentication_manager.session_manager._cleanup_expired_sessions()
