@@ -23,8 +23,11 @@ def handle_client(client: socket.socket, addr):
     if ssl_manager.enable_https:
         try:
             client = ssl_manager.wrap_client_socket(client)
-        except ssl.SSLError:
-            return  # Si falla SSL, cerrar conexión
+        except (ssl.SSLError, socket.timeout):
+            return
+        except Exception as e:
+            print(f"Error no esperado en SSL wrap: {e}")
+            return
     
     try:
         raw_data = client.recv(8192)
@@ -51,37 +54,37 @@ def handle_client(client: socket.socket, addr):
             print(user)
             print(password)
             
-
-            valido, error, sesion_id = count_manager.login(user, password, addr[0])
-            # if(user=="admin" and password=="1234"):
-            #     valido=True
+            mac=Conexion_Manager.get_mac(addr[0])
+            valido, error, sesion_id = count_manager.login(user, password, addr[0], mac)
             print(valido)
             if not valido:
                 response = _parser.build_error_response(400, error)
                 client.sendall(response.to_bytes())
             else:
-                mac=Conexion_Manager.get_mac(addr[0])
-                Conexion_Manager.permitir_usuario(addr[0],mac)
+                if mac:
+                    Conexion_Manager.permitir_usuario(addr[0], mac)
                 response = _parser.build_html_response(Html.html_ok)
                 client.sendall(response.to_bytes())
 
     except Exception as e:
         print("Error:", e)
     finally:
-        client.close()
+        try:
+            client.close()
+        except:
+            pass
 
 
 def worker():
     """Worker que atiende clientes de la cola."""
     while True:
-        client, addr = client_queue.get()   # Espera un cliente
+        client, addr = client_queue.get()
         try:
             handle_client(client, addr)
         except Exception as e:
             print(f"Error manejando {addr}: {e}")
         finally:
-          
-            client_queue.task_done()  
+            client_queue.task_done()
 
 
 def start_thread_pool():
@@ -89,8 +92,8 @@ def start_thread_pool():
     for _ in range(WORKER_COUNT):
         t = threading.Thread(target=worker, daemon=True)
         t.start()
+
         
-# --- Servidor principal con threads ---
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 server.bind((HOST, PORT))
@@ -102,5 +105,11 @@ count_manager.create_user("admin","12345678")
 print(f"Servidor captivo escuchando en {HOST}:{PORT}")
 
 while True:
-    client, addr = server.accept()
-    client_queue.put((client, addr))
+    try:
+        client, addr = server.accept()
+        client_queue.put((client, addr))
+    except KeyboardInterrupt:
+        print("\nCerrando servidor...")
+        break
+    except Exception as e:
+        print(f"Error aceptando conexión: {e}")

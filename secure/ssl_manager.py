@@ -82,6 +82,9 @@ subjectAltName = @alt_names
 [alt_names]
 DNS.1 = localhost
 DNS.2 = captive-portal.local
+DNS.3 = connectivitycheck.gstatic.com
+DNS.4 = captive.apple.com
+DNS.5 = www.msftconnect.com
 IP.1 = 127.0.0.1
 IP.2 = {server_ip}
 """
@@ -125,11 +128,11 @@ IP.2 = {server_ip}
             self.context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
             self.context.load_cert_chain(certfile=self.certfile, keyfile=self.keyfile)
             
-            self.context.set_ciphers('ECDHE+AESGCM:ECDHE+CHACHA20:!aNULL:!MD5:!DSS:!DHE')
+            self.context.set_ciphers('ECDHE+AESGCM:ECDHE+CHACHA20:DHE+AESGCM:DHE+CHACHA20:RSA+AESGCM:RSA+AES:!aNULL:!MD5:!DSS')
             self.context.options |= ssl.OP_NO_SSLv2
             self.context.options |= ssl.OP_NO_SSLv3
-            self.context.options |= ssl.OP_NO_TLSv1
-            self.context.options |= ssl.OP_NO_TLSv1_1
+            
+            self.context.minimum_version = ssl.TLSVersion.TLSv1
             
             self.context.check_hostname = False
             self.context.verify_mode = ssl.CERT_NONE
@@ -161,17 +164,24 @@ IP.2 = {server_ip}
                 server_side=True,
                 do_handshake_on_connect=False
             )
-            secure_socket.settimeout(5.0)
+            secure_socket.settimeout(15.0)
             secure_socket.do_handshake()
             secure_socket.settimeout(None)
             return secure_socket
         except ssl.SSLError as e:
-            logger.warning(f"Error en handshake SSL: {e}")
+            logger.debug(f"Handshake SSL fallido (probablemente verificación de conectividad): {e}")
             try:
                 client_socket.close()
             except:
                 pass
             raise
+        except socket.timeout:
+            logger.debug("Timeout en handshake SSL")
+            try:
+                client_socket.close()
+            except:
+                pass
+            raise ssl.SSLError("SSL handshake timeout")
     
     def get_https_info(self) -> dict:
         info = {

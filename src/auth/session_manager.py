@@ -185,26 +185,32 @@ class SessionManager:
         if current_time > session_data.get('expires_at', 0)
 ]
         
-        for (session_id,session_data) in expired_sessions:
-            ##################################################################################
-            Conexion_Manager.bloquear_usuario(session_data.get('client_ip'),session_data.get('client_mac'))
+        for (session_id, session_data) in expired_sessions:
+            client_ip = session_data.get('client_ip')
+            client_mac = session_data.get('client_mac')
+            if client_ip and client_mac:
+                Conexion_Manager.bloquear_usuario(client_ip, client_mac)
             del self.sessions[session_id]
         
         if expired_sessions and save_after_cleanup:
             self._save_sessions()
     
-    def create_session(self, username: str, client_ip: str,mac) -> str:
+    def create_session(self, username: str, client_ip: str, mac: str = None) -> str:
         session_id = self._generate_session_id()
         current_time = time.time()
         
-        self.sessions[session_id] = {
+        session_data = {
             'username': username,
             'client_ip': client_ip,
             'created_at': current_time,
             'last_activity': current_time,
-            'expires_at': current_time + self.session_timeout,
-            'client_mac':mac
+            'expires_at': current_time + self.session_timeout
         }
+        
+        if mac:
+            session_data['client_mac'] = mac
+        
+        self.sessions[session_id] = session_data
         
         self._save_sessions()
         return session_id
