@@ -15,12 +15,14 @@ class Conexion_Manager:
             subprocess.run(cmd_nat, check=True)
 
             # 2. TABLA FILTER (FORWARD): Salida (solo IP)
-            cmd_fwd_out = ["iptables", "-I", "FORWARD", "1", "-s", ip, "-j", "ACCEPT"]
+            cmd_fwd_out = ["iptables", "-A", "FORWARD", "-s", ip, "-m", "mac", "--mac-source", mac, "-j", "ACCEPT"]
             subprocess.run(cmd_fwd_out, check=True)
 
-            # 3. TABLA FILTER (FORWARD): Retorno (solo IP)
-            cmd_fwd_in = ["iptables", "-I", "FORWARD", "1", "-d", ip, "-j", "ACCEPT"]
-            subprocess.run(cmd_fwd_in, check=True)
+            subprocess.run([
+            "iptables", "-A", "FORWARD", 
+            "-d", ip, "-m", "conntrack", "--ctstate", "ESTABLISHED,RELATED",
+            "-j", "ACCEPT"
+        ], check=True)
 
             print(f"Reglas aplicadas correctamente para {ip} / {mac}")
 
@@ -32,7 +34,7 @@ class Conexion_Manager:
     def bloquear_usuario(ip, mac):
         print(f"--- Bloqueando IP: {ip} / MAC: {mac} ---")
         try:
-            # Eliminamos regla NAT IP + MAC
+           
             subprocess.run([
                 "iptables", "-t", "nat", "-D", "PREROUTING",
                 "-s", ip,
@@ -41,7 +43,7 @@ class Conexion_Manager:
             ], check=False)
 
             # Eliminamos FORWARD salida (solo IP)
-            subprocess.run(["iptables", "-D", "FORWARD", "-s", ip, "-j", "ACCEPT"], check=False)
+            subprocess.run(["iptables", "-D", "FORWARD", "-s", ip, "-m", "mac", "--mac-source", "-j", "ACCEPT"], check=False)
 
             # Eliminamos FORWARD entrada (solo IP)
             subprocess.run(["iptables", "-D", "FORWARD", "-d", ip, "-j", "ACCEPT"], check=False)
@@ -66,3 +68,18 @@ class Conexion_Manager:
         return None
 
 
+    @staticmethod
+    def ping(ip: str) -> bool:
+        print("entre al meodo estatico de ping")
+        if not ip:
+            return False
+
+        try:
+            result = subprocess.run(
+                ["ping", "-c", "1", "-W", "1", ip],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL
+            )
+            return result.returncode == 0
+        except Exception:
+            return False
