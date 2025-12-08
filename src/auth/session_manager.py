@@ -178,19 +178,25 @@ class SessionManager:
         return secrets.token_urlsafe(64)
     
     def _cleanup_expired_sessions(self, save_after_cleanup: bool = True):
+       
         current_time = time.time()
         expired_sessions = [
         (session_id, session_data)
         for session_id, session_data in self.sessions.items()
-        if current_time > session_data.get('expires_at', 0)
-]
-        
-        for (session_id, session_data) in expired_sessions:
-            client_ip = session_data.get('client_ip')
-            client_mac = session_data.get('client_mac')
-            if client_ip and client_mac:
-                Conexion_Manager.bloquear_usuario(client_ip, client_mac)
-            del self.sessions[session_id]
+        if current_time > session_data.get('expires_at', 0)]           
+
+        for (session_id,session_data) in expired_sessions:
+            ip=session_data.get('client_ip')
+            mac=session_data.get('client_mac')
+
+            if Conexion_Manager.ping(ip):
+                session_data["expires_at"] = current_time + 3600
+                print(f"[+] Sesión {session_id} renovada (IP activa: {ip})")
+
+            else:    
+                print("no entre a ping")
+                Conexion_Manager.bloquear_usuario(ip,mac)
+                del self.sessions[session_id]
         
         if expired_sessions and save_after_cleanup:
             self._save_sessions()

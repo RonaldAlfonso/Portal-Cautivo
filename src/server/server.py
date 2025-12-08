@@ -11,9 +11,10 @@ from src.server.Html import Html
 from src.server.session_verification import start_cleanup_thread
 from secure.ssl_manager import SSLManager 
 from queue import Queue
+import time
 
-HOST = "0.0.0.0"
-PORT = 8443
+HOST = "10.42.0.1"
+PORT = 8080
 WORKER_COUNT = 10
 client_queue = Queue()
 
@@ -53,16 +54,7 @@ def send_error_json(client, error_message, status_code=400):
     """Helper para enviar errores JSON"""
     send_json_response(client, {"success": False, "error": error_message}, status_code)
 
-def handle_client(client: socket.socket, addr):
-    if ssl_manager.enable_https:
-        try:
-            client = ssl_manager.wrap_client_socket(client)
-        except (ssl.SSLError, socket.timeout):
-            return
-        except Exception as e:
-            print(f"Error no esperado en SSL wrap: {e}")
-            return
-    
+def handle_client(client: socket.socket, addr): 
     try:
         raw_data = client.recv(8192)
         if not raw_data:
@@ -112,7 +104,7 @@ def handle_client(client: socket.socket, addr):
             try:
                 mac = Conexion_Manager.get_mac(addr[0])
             except:
-                mac = "00:00:00:00:00:00"
+                pass
 
             # ===== LOGIN PRINCIPAL =====
             if request.path == '/':
@@ -257,9 +249,7 @@ def handle_client(client: socket.socket, addr):
                         if not count_manager.user_manager.user_exists(username):
                             send_error_json(client, "Usuario no encontrado")
                         else:
-                            # Cerrar todas las sesiones del usuario antes de eliminarlo
                             count_manager.logout_user(username)
-                            # Eliminar el usuario
                             success = count_manager.user_manager.delete_user(username)
                             if success:
                                 send_json_response(client, {
@@ -293,14 +283,12 @@ def handle_client(client: socket.socket, addr):
                     if not session_id:
                         send_error_json(client, "ID de sesión requerido")
                     else:
-                        # Obtener información de la sesión antes de eliminarla
                         session_info = None
                         if session_id in count_manager.session_manager.sessions:
                             session_info = count_manager.session_manager.sessions[session_id]
                         
                         success = count_manager.logout(session_id)
                         
-                        # Si había información de la sesión, bloquear al usuario
                         if success and session_info:
                             client_ip = session_info.get('client_ip')
                             client_mac = session_info.get('client_mac')
@@ -353,26 +341,17 @@ def start_thread_pool():
         t = threading.Thread(target=worker, daemon=True)
         t.start()
 
-# Inicializar servidor
+        
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 server.bind((HOST, PORT))
-server = ssl_manager.wrap_server_socket(server)
 server.listen(50)
 
 # Iniciar pool de workers y limpieza de sesiones
 start_thread_pool()
 start_cleanup_thread(count_manager)
-
-# Crear usuario admin por defecto
-try:
-    count_manager.create_user("admin", "12345678")
-    print("Usuario admin creado/verificado")
-except:
-    print("Usuario admin ya existe")
-
+count_manager.create_user("admin","12345678")
 print(f"Servidor captivo escuchando en {HOST}:{PORT}")
-print(f"HTTPS habilitado: {ssl_manager.enable_https}")
 
 # Loop principal
 while True:
