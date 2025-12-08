@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portal Cautivo - Login</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="login-page">
+    <div class="container">
+        <div class="login-card">
+            <div class="logo-header">
+                <div class="logo-icon">🔒</div>
+                <h1>Portal Cautivo</h1>
+                <p class="subtitle">Sistema de Acceso Controlado</p>
+            </div>
+            
+            <form id="loginForm" class="login-form">
+                <div class="form-group">
+                    <label for="username">Usuario</label>
+                    <input type="text" id="username" name="user" placeholder="Ingrese su usuario" required autofocus>
+                </div>
+                
+                <div class="form-group">
+                    <label for="password">Contraseña</label>
+                    <input type="password" id="password" name="pass" placeholder="Ingrese su contraseña" required>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary btn-block">
+                        <span class="btn-text">Acceder al Sistema</span>
+                        <span class="btn-loader" style="display: none;">↻</span>
+                    </button>
+                </div>
+                
+                <div id="errorMessage" class="error-message" style="display: none;"></div>
+            </form>
+            
+            <div class="footer-note">
+                <p>Proyecto de Redes de Computadoras • 2025</p>
+            </div>
+        </div>
+    </div>
+    
+    <script src="script.js"></script>
+</body>
+</html>

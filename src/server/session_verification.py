@@ -11,7 +11,6 @@ def start_cleanup_thread(autentication_manager:Authentication):
             except Exception as e:
                 print(f"[CLEANUP ERROR] {e}")
 
-            # Espera 5 minutos (300 segundos)
             time.sleep(30)
     t = threading.Thread(target=cleanup_loop, daemon=True)
     t.start()

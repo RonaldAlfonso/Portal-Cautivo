@@ -10,7 +10,7 @@ from datetime import datetime
 from src.server.ConexionManager import *
 
 class SessionManager:
-    def __init__(self, sessions_file: str = "data/sessions.json", session_timeout: int = 40):
+    def __init__(self, sessions_file: str = "data/sessions.json", session_timeout: int = 3600):
         self.sessions_file = sessions_file
         self._lock_file = sessions_file + ".lock"
         self.session_timeout = session_timeout

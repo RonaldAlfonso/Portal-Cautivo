@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Administración</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="admin-page">
+    <div class="admin-container">
+        <!-- Header -->
+        <header class="admin-header">
+            <div class="header-left">
+                <div class="logo">
+                    <i class="fas fa-shield-alt"></i>
+                    <span>Portal Admin</span>
+                </div>
+            </div>
+            <div class="header-right">
+                <button id="logoutBtn" class="btn btn-secondary btn-sm">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Cerrar Sesión</span>
+                </button>
+            </div>
+        </header>
+
+        <div class="admin-content">
+            <!-- Sidebar -->
+            <aside class="admin-sidebar">
+                <nav class="sidebar-nav">
+                    <a href="#users" class="nav-item active" data-section="users">
+                        <i class="fas fa-users"></i>
+                        <span>Usuarios</span>
+                    </a>
+                    <a href="#sessions" class="nav-item" data-section="sessions">
+                        <i class="fas fa-clock"></i>
+                        <span>Sesiones</span>
+                    </a>
+                    <a href="success.html" class="nav-item">
+                        <i class="fas fa-home"></i>
+                        <span>Volver al Portal</span>
+                    </a>
+                </nav>
+                
+                <div class="sidebar-footer">
+                    <div class="system-status">
+                        <div class="status-indicator active"></div>
+                        <span>Sistema Activo</span>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Main Content -->
+            <main class="admin-main">
+                <!-- Users Section -->
+                <section id="usersSection" class="content-section active">
+                    <div class="section-header">
+                        <h2><i class="fas fa-users"></i> Gestión de Usuarios</h2>
+                        <button id="newUserBtn" class="btn btn-primary">
+                            <i class="fas fa-plus"></i>
+                            <span>Nuevo Usuario</span>
+                        </button>
+                    </div>
+                    
+                    <div class="users-table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Usuario</th>
+                                    <th>Estado</th>
+                                    <th>Último Login</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="usersTableBody">
+                                <!-- Los datos se cargarán dinámicamente -->
+                                <tr class="loading-row">
+                                    <td colspan="4">
+                                        <div class="loading-spinner">Cargando usuarios...</div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- Sessions Section -->
+                <section id="sessionsSection" class="content-section">
+                    <div class="section-header">
+                        <h2><i class="fas fa-clock"></i> Sesiones Activas</h2>
+                        <div class="auto-refresh">
+                            <i class="fas fa-sync-alt"></i>
+                            <span>Actualizando cada 30s</span>
+                        </div>
+                    </div>
+                    
+                    <div class="sessions-table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Usuario</th>
+                                    <th>Dirección IP</th>
+                                    <th>Inicio de Sesión</th>
+                                    <th>Expira en</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="sessionsTableBody">
+                                <!-- Los datos se cargarán dinámicamente -->
+                                <tr class="loading-row">
+                                    <td colspan="5">
+                                        <div class="loading-spinner">Cargando sesiones...</div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            </main>
+        </div>
+    </div>
+
+    <!-- New User Modal -->
+    <div id="newUserModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-user-plus"></i> Crear Nuevo Usuario</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="newUserForm">
+                    <div class="form-group">
+                        <label for="newUsername">Nombre de Usuario</label>
+                        <input type="text" id="newUsername" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="newPassword">Contraseña</label>
+                        <input type="password" id="newPassword" required>
+                        <small class="hint">Mínimo 8 caracteres</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="confirmPassword">Confirmar Contraseña</label>
+                        <input type="password" id="confirmPassword" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary modal-cancel">Cancelar</button>
+                <button id="createUserBtn" class="btn btn-primary">Crear Usuario</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div id="confirmModal" class="modal" style="display: none;">
+        <div class="modal-content modal-sm">
+            <div class="modal-body">
+                <div class="confirm-icon">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <h4 id="confirmMessage">¿Está seguro de realizar esta acción?</h4>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary modal-cancel">Cancelar</button>
+                <button id="confirmActionBtn" class="btn btn-danger">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

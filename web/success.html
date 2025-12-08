@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Acceso Concedido</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="success-page">
+    <div class="container">
+        <div class="success-card">
+            <div class="success-icon">✓</div>
+            <h1>¡Acceso Concedido!</h1>
+            <p class="success-message">
+                Su autenticación ha sido exitosa. Ahora puede navegar libremente en la red.
+            </p>
+            
+            <div class="session-info">
+                <div class="info-item">
+                    <span class="info-label">Estado:</span>
+                    <span class="info-value status-active">Conectado</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Sesión expira en:</span>
+                    <span class="info-value" id="sessionTimer">60 minutos</span>
+                </div>
+            </div>
+            
+            <div class="action-buttons">
+                <button id="adminBtn" class="btn btn-primary">
+                    <span>Ir al Panel de Administración</span>
+                </button>
+                <button id="logoutBtn" class="btn btn-secondary">
+                    <span>Cerrar Sesión</span>
+                </button>
+            </div>
+            
+            <div class="return-link">
+                <a href="index.html" class="link">← Volver al inicio</a>
+            </div>
+        </div>
+    </div>
+    
+    <script src="script.js"></script>
+</body>
+</html>
