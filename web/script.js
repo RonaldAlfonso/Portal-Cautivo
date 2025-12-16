@@ -205,7 +205,7 @@ class SuccessPage {
         
         const adminBtn = document.getElementById('adminBtn');
         const logoutBtn = document.getElementById('logoutBtn');
-        const sessionTimer = document.getElementById('sessionTimer');
+        const sessionTimer = null;
 
         if (adminBtn) {
             console.log('Admin button encontrado, verificando si es admin...');
@@ -231,9 +231,26 @@ class SuccessPage {
         }
 
         if (logoutBtn) {
-            logoutBtn.addEventListener('click', () => {
-                SessionManager.clearSession();
-                window.location.href = 'index.html';
+            logoutBtn.addEventListener('click', async () => {
+                try {
+                    const response = await fetch('/api/logout', {
+                        method: 'POST',
+                        credentials: 'include'
+                    });
+                    
+                    if (response.ok) {
+                        SessionManager.clearSession();
+                        window.location.href = 'index.html';
+                    } else {
+                        console.error('Error al cerrar sesión en servidor');
+                        SessionManager.clearSession();
+                        window.location.href = 'index.html';
+                    }
+                } catch (error) {
+                    console.error('Error al cerrar sesión:', error);
+                    SessionManager.clearSession();
+                    window.location.href = 'index.html';
+                }
             });
         }
 
@@ -362,9 +379,26 @@ class AdminPage {
     static initLogout() {
         const logoutBtn = document.getElementById('logoutBtn');
         if (logoutBtn) {
-            logoutBtn.addEventListener('click', () => {
-                SessionManager.clearSession();
-                window.location.href = 'index.html';
+            logoutBtn.addEventListener('click', async () => {
+                try {
+                    const response = await fetch('/api/logout', {
+                        method: 'POST',
+                        credentials: 'include'
+                    });
+                    
+                    if (response.ok) {
+                        SessionManager.clearSession();
+                        window.location.href = 'index.html';
+                    } else {
+                        console.error('Error al cerrar sesión en servidor');
+                        SessionManager.clearSession();
+                        window.location.href = 'index.html';
+                    }
+                } catch (error) {
+                    console.error('Error al cerrar sesión:', error);
+                    SessionManager.clearSession();
+                    window.location.href = 'index.html';
+                }
             });
         }
     }

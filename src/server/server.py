@@ -144,6 +144,33 @@ def handle_client(client: socket.socket, addr):
                     response.set_cookie('session_id', sesion_id, max_age=3600)
                     client.sendall(response.to_bytes())
             
+            # ====== API LOGOUT =====
+            elif request.path == '/api/logout':
+                session_id = request.cookies.get('session_id')
+                if not session_id:
+                    send_error_json(client, "No hay sesión activa", 400)
+                else:
+                    session_info = None
+                    if session_id in count_manager.session_manager.sessions:
+                        session_info = count_manager.session_manager.sessions[session_id]
+                    
+                    success = count_manager.logout(session_id)
+                    
+                    if success and session_info:
+                        client_ip = session_info.get('client_ip')
+                        client_mac = session_info.get('client_mac')
+                        if client_ip and client_mac:
+                            try:
+                                Conexion_Manager.bloquear_usuario(client_ip, client_mac)
+                                print(f"Usuario bloqueado: {client_ip} ({client_mac})")
+                            except Exception as e:
+                                print(f"Error al bloquear usuario: {e}")
+                    
+                    send_json_response(client, {
+                        "success": True, 
+                        "message": "Sesión cerrada exitosamente"
+                    })
+
             # ===== API VERIFY SESSION =====
             elif request.path == '/api/verify-session':
                 session_id = request.cookies.get('session_id')
